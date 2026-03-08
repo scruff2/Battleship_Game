@@ -1,0 +1,1891 @@
+﻿
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battleship: Iron Tides</title>
+  <style>
+    :root {
+      --bg0: #081117;
+      --bg1: #0f1d27;
+      --bg2: #132838;
+      --panel: rgba(7, 16, 24, 0.82);
+      --line: rgba(124, 162, 181, 0.22);
+      --text: #d8e4ea;
+      --muted: #95a8b2;
+      --danger: #cf5d55;
+      --ok: #92d17c;
+      --shadow: rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 80% 15%, rgba(85, 125, 95, 0.24), transparent 36%),
+        radial-gradient(circle at 10% 85%, rgba(54, 98, 112, 0.25), transparent 42%),
+        linear-gradient(160deg, var(--bg0), var(--bg1) 44%, var(--bg2));
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 38px 38px;
+      opacity: 0.25;
+    }
+
+    .wrap {
+      width: min(1220px, 96vw);
+      margin: 18px auto 26px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(180deg, rgba(8, 19, 28, 0.9), rgba(6, 15, 22, 0.88));
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 16px;
+      box-shadow: 0 12px 30px var(--shadow);
+    }
+
+    .title {
+      margin: 0;
+      font-size: 1.32rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #e6eef3;
+    }
+
+    .subtitle {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      background: rgba(159, 188, 121, 0.1);
+      color: #dce9c8;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px var(--shadow);
+      backdrop-filter: blur(3px);
+    }
+
+    .left-pane {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: #dbe6ea;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.78rem;
+      color: #b5c4cc;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+
+    input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(8, 16, 24, 0.8);
+      color: var(--text);
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    input:focus { border-color: rgba(154, 183, 113, 0.75); }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid rgba(157, 183, 122, 0.45);
+      color: #e3edd2;
+      background: linear-gradient(180deg, rgba(64, 96, 63, 0.45), rgba(33, 58, 38, 0.6));
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .secondary {
+      border-color: rgba(104, 154, 173, 0.4);
+      color: #d4e7ef;
+      background: linear-gradient(180deg, rgba(46, 93, 112, 0.48), rgba(24, 54, 70, 0.55));
+    }
+
+    .danger {
+      border-color: rgba(205, 92, 85, 0.38);
+      color: #f3d0cb;
+      background: linear-gradient(180deg, rgba(131, 58, 53, 0.56), rgba(80, 31, 28, 0.6));
+    }
+
+    .status {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(6, 15, 21, 0.62);
+      padding: 10px;
+      font-size: 0.87rem;
+      line-height: 1.35;
+    }
+
+    .ship-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .ship-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: rgba(9, 19, 27, 0.7);
+      font-size: 0.86rem;
+    }
+
+    .ship-item.active { border-color: rgba(155, 183, 115, 0.75); box-shadow: inset 0 0 0 1px rgba(155, 183, 115, 0.5); }
+    .ship-item.done { border-color: rgba(118, 173, 189, 0.7); color: #cce3eb; }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--muted);
+    }
+
+    .dot.done { background: var(--ok); box-shadow: 0 0 10px rgba(146, 209, 124, 0.8); }
+
+    .game-pane {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .hud {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hud-box {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(7, 17, 25, 0.78);
+      font-size: 0.84rem;
+      color: #c7d8df;
+    }
+    .boards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .board-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(8, 19, 27, 0.85), rgba(7, 16, 22, 0.84));
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .board-title {
+      margin: 0 0 8px;
+      font-size: 0.88rem;
+      color: #d4e2e8;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+
+    .board-wrap {
+      perspective: none;
+      transform-style: flat;
+    }
+
+    .board {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 4px;
+      padding: 8px;
+      border-radius: 10px;
+      background: linear-gradient(160deg, rgba(29, 58, 71, 0.95), rgba(13, 33, 44, 0.92));
+      border: 1px solid rgba(126, 166, 182, 0.28);
+      transform: none;
+      box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.28);
+      touch-action: none;
+    }
+
+    .ship-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .ship-sprite {
+      position: absolute;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      transform-origin: center;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .tile {
+      position: relative;
+      z-index: 2;
+      border-radius: 4px;
+      border: 1px solid rgba(170, 205, 219, 0.17);
+      background: linear-gradient(180deg, #255066, #1b3f53);
+      box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.33);
+      transition: transform 0.08s ease, filter 0.08s ease;
+      user-select: none;
+    }
+
+    .tile:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .tile.clickable { cursor: crosshair; }
+    .tile.ship-image-cell {
+      background: transparent;
+      box-shadow: none;
+      border-color: rgba(194, 215, 225, 0.32);
+    }
+    .tile.ship.ship-image-cell::before,
+    .tile.ship.ship-image-cell::after {
+      content: none;
+    }
+    .tile.ship {
+      border-color: rgba(194, 215, 225, 0.5);
+      background: linear-gradient(180deg, #506577, #334657);
+      box-shadow: inset 0 1px 2px rgba(244, 250, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.36);
+      overflow: hidden;
+    }
+    .tile.ship::before {
+      content: "";
+      position: absolute;
+      background:
+        linear-gradient(180deg, #d4d9dc 0%, #a8b0b7 56%, #7b8792 100%),
+        repeating-linear-gradient(90deg, rgba(70, 78, 88, 0.14) 0 2px, rgba(255, 255, 255, 0.06) 2px 4px);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.5),
+        inset 0 -1px 2px rgba(24, 34, 44, 0.45),
+        0 1px 2px rgba(0, 0, 0, 0.28);
+      pointer-events: none;
+    }
+    .tile.ship::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.95;
+    }
+    .tile.ship.ship-h.ship-bow::before {
+      inset: 18% 6% 18% 14%;
+      clip-path: polygon(0 50%, 34% 10%, 100% 10%, 100% 90%, 34% 90%);
+    }
+    .tile.ship.ship-h.ship-mid::before { inset: 18% 6%; border-radius: 2px; }
+    .tile.ship.ship-h.ship-stern::before {
+      inset: 18% 14% 18% 6%;
+      clip-path: polygon(0 10%, 76% 10%, 100% 50%, 76% 90%, 0 90%);
+    }
+    .tile.ship.ship-v.ship-bow::before {
+      inset: 14% 18% 6% 18%;
+      clip-path: polygon(50% 0, 90% 34%, 90% 100%, 10% 100%, 10% 34%);
+    }
+    .tile.ship.ship-v.ship-mid::before { inset: 6% 18%; border-radius: 2px; }
+    .tile.ship.ship-v.ship-stern::before {
+      inset: 6% 18% 14% 18%;
+      clip-path: polygon(10% 0, 90% 0, 90% 76%, 50% 100%, 10% 76%);
+    }
+    .tile.ship.ship-h::after {
+      inset: 37% 16%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #e7ecef, #bdc6cd 48%, #7f8d98 100%);
+    }
+    .tile.ship.ship-v::after {
+      inset: 16% 37%;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #e7ecef, #bdc6cd 48%, #7f8d98 100%);
+    }
+    .tile.ship.ship-turret.ship-h::after {
+      inset: 34% 14%;
+      background:
+        radial-gradient(circle at 28% 50%, #32393f 0 18%, transparent 20%),
+        radial-gradient(circle at 72% 50%, #32393f 0 18%, transparent 20%),
+        linear-gradient(90deg, #d9e0e5, #afb9c1 50%, #77838d);
+      border-radius: 2px;
+    }
+    .tile.ship.ship-turret.ship-v::after {
+      inset: 14% 34%;
+      background:
+        radial-gradient(circle at 50% 28%, #32393f 0 18%, transparent 20%),
+        radial-gradient(circle at 50% 72%, #32393f 0 18%, transparent 20%),
+        linear-gradient(180deg, #d9e0e5, #afb9c1 50%, #77838d);
+      border-radius: 2px;
+    }
+    .tile.ship.ship-bridge.ship-h::after {
+      inset: 30% 16%;
+      background:
+        linear-gradient(90deg, #d8dee3, #b2bcc4 46%, #7f8c96),
+        linear-gradient(180deg, transparent 0 24%, rgba(34, 43, 52, 0.82) 25% 75%, transparent 76%);
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 1px rgba(42, 58, 68, 0.3);
+    }
+    .tile.ship.ship-bridge.ship-v::after {
+      inset: 16% 30%;
+      background:
+        linear-gradient(180deg, #d8dee3, #b2bcc4 46%, #7f8c96),
+        linear-gradient(90deg, transparent 0 24%, rgba(34, 43, 52, 0.82) 25% 75%, transparent 76%);
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 1px rgba(42, 58, 68, 0.3);
+    }
+    .tile.ship.ship-submarine {
+      background: transparent;
+      box-shadow: none;
+      border-color: rgba(194, 215, 225, 0.32);
+    }
+    .tile.ship.ship-submarine::before {
+      inset: 1%;
+      background-image: url("Submarine_gemini.png");
+      background-repeat: no-repeat;
+      background-color: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      clip-path: none;
+    }
+    .tile.ship.ship-submarine::after { content: none; }
+    .tile.ship.ship-submarine.ship-h.ship-bow::before,
+    .tile.ship.ship-submarine.ship-h.ship-mid::before,
+    .tile.ship.ship-submarine.ship-h.ship-stern::before,
+    .tile.ship.ship-submarine.ship-v.ship-bow::before,
+    .tile.ship.ship-submarine.ship-v.ship-mid::before,
+    .tile.ship.ship-submarine.ship-v.ship-stern::before {
+      inset: 1%;
+      border-radius: 0;
+      clip-path: none;
+    }
+    .tile.ship.ship-submarine.ship-h::before { background-size: 200% auto; }
+    .tile.ship.ship-submarine.ship-h.sub-seg-0::before { background-position: 0% 50%; }
+    .tile.ship.ship-submarine.ship-h.sub-seg-1::before { background-position: 100% 50%; }
+    .tile.ship.ship-submarine.ship-v::before {
+      background-size: 200% auto;
+      transform: rotate(90deg);
+      transform-origin: center;
+    }
+    .tile.ship.ship-submarine.ship-v.sub-seg-0::before { background-position: 0% 50%; }
+    .tile.ship.ship-submarine.ship-v.sub-seg-1::before { background-position: 100% 50%; }
+    .tile.ship.ship-carrier {
+      background: transparent;
+      box-shadow: none;
+      border-color: rgba(194, 215, 225, 0.32);
+    }
+    .tile.ship.ship-carrier::before {
+      inset: 1%;
+      background-image: url("Carrier.png");
+      background-repeat: no-repeat;
+      background-color: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      clip-path: none;
+    }
+    .tile.ship.ship-carrier::after { content: none; }
+    .tile.ship.ship-carrier.ship-h.ship-bow::before,
+    .tile.ship.ship-carrier.ship-h.ship-mid::before,
+    .tile.ship.ship-carrier.ship-h.ship-stern::before,
+    .tile.ship.ship-carrier.ship-v.ship-bow::before,
+    .tile.ship.ship-carrier.ship-v.ship-mid::before,
+    .tile.ship.ship-carrier.ship-v.ship-stern::before {
+      inset: 1%;
+      border-radius: 0;
+      clip-path: none;
+    }
+    .tile.ship.ship-carrier.ship-v::before { background-size: 185% 500%; }
+    .tile.ship.ship-carrier.ship-v.carrier-seg-0::before { background-position: 50% 0%; }
+    .tile.ship.ship-carrier.ship-v.carrier-seg-1::before { background-position: 50% 25%; }
+    .tile.ship.ship-carrier.ship-v.carrier-seg-2::before { background-position: 50% 50%; }
+    .tile.ship.ship-carrier.ship-v.carrier-seg-3::before { background-position: 50% 75%; }
+    .tile.ship.ship-carrier.ship-v.carrier-seg-4::before { background-position: 50% 100%; }
+    .tile.ship.ship-carrier.ship-h::before {
+      background-size: 185% 500%;
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+    .tile.ship.ship-carrier.ship-h.carrier-seg-0::before { background-position: 50% 0%; }
+    .tile.ship.ship-carrier.ship-h.carrier-seg-1::before { background-position: 50% 25%; }
+    .tile.ship.ship-carrier.ship-h.carrier-seg-2::before { background-position: 50% 50%; }
+    .tile.ship.ship-carrier.ship-h.carrier-seg-3::before { background-position: 50% 75%; }
+    .tile.ship.ship-carrier.ship-h.carrier-seg-4::before { background-position: 50% 100%; }
+    .tile.ship.ship-cannon.ship-h::after {
+      inset: 30% 8%;
+      border-radius: 2px;
+      background:
+        linear-gradient(90deg, transparent 0 12%, #273038 13% 96%, transparent 97%),
+        radial-gradient(circle at 96% 50%, #1f272d 0 7%, transparent 8%),
+        radial-gradient(circle at 28% 50%, #4d5963 0 19%, #2f383f 21% 38%, transparent 39%),
+        linear-gradient(90deg, #dde4e9, #b3bdc4 48%, #7d8994);
+      box-shadow: inset 0 0 0 1px rgba(44, 54, 62, 0.25);
+    }
+    .tile.ship.ship-cannon.ship-v::after {
+      inset: 8% 30%;
+      border-radius: 2px;
+      background:
+        linear-gradient(180deg, transparent 0 12%, #273038 13% 96%, transparent 97%),
+        radial-gradient(circle at 50% 96%, #1f272d 0 7%, transparent 8%),
+        radial-gradient(circle at 50% 28%, #4d5963 0 19%, #2f383f 21% 38%, transparent 39%),
+        linear-gradient(180deg, #dde4e9, #b3bdc4 48%, #7d8994);
+      box-shadow: inset 0 0 0 1px rgba(44, 54, 62, 0.25);
+    }
+    .tile.ship.ship-solo::before { inset: 18%; border-radius: 2px; }
+    .tile.hit { background: radial-gradient(circle at 40% 30%, #ffc9a8, #e76434 70%); border-color: rgba(255, 187, 140, 0.78); }
+    .tile.miss { background: radial-gradient(circle at 40% 35%, #a5d6e6, #477e97 72%); }
+    .tile.enemy-hit { background: radial-gradient(circle at 45% 35%, #ffbe95, #d8592d 71%); }
+    .tile.hit, .tile.miss, .tile.enemy-hit { z-index: 7; }
+    .tile.auto-scan {
+      box-shadow: 0 0 0 2px rgba(188, 224, 238, 0.95), 0 0 16px rgba(126, 195, 222, 0.95);
+      filter: brightness(1.2);
+    }
+    .tile.flash {
+      box-shadow: 0 0 0 2px rgba(255, 232, 170, 0.95), 0 0 18px rgba(255, 196, 90, 0.95);
+      filter: brightness(1.28);
+      transition: box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .tile.hit::after, .tile.enemy-hit::after {
+      content: "";
+      position: absolute;
+      inset: 24%;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 230, 210, 0.9);
+      box-shadow: 0 0 8px rgba(255, 173, 120, 0.75);
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sw {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .log {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(4, 10, 15, 0.74);
+      height: 122px;
+      overflow: auto;
+      padding: 8px;
+      font-size: 0.79rem;
+      line-height: 1.35;
+      color: #b6cad3;
+    }
+
+    .log p { margin: 0 0 5px; }
+
+    .click-feedback {
+      position: fixed;
+      width: 32px;
+      height: 32px;
+      margin-left: -16px;
+      margin-top: -16px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 235, 190, 0.95);
+      box-shadow: 0 0 16px rgba(255, 196, 110, 0.9), inset 0 0 10px rgba(255, 215, 150, 0.55);
+      background: radial-gradient(circle, rgba(255, 221, 160, 0.35), rgba(255, 160, 70, 0.12));
+      pointer-events: none;
+      z-index: 9999;
+      animation: clickPulse 1.15s ease-out forwards;
+    }
+
+    @keyframes clickPulse {
+      0% { opacity: 0.95; transform: scale(0.55); }
+      55% { opacity: 0.92; transform: scale(1.15); }
+      100% { opacity: 0; transform: scale(1.55); }
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .boards { grid-template-columns: 1fr; }
+      .board { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="titlebar panel">
+      <div>
+        <h1 class="title">Battleship: Iron Tides</h1>
+        <p class="subtitle">Classic rules. Turn-based LAN combat.</p>
+      </div>
+      <div class="badge" id="connectionBadge">Disconnected</div>
+    </div>
+
+    <div class="layout">
+      <aside class="left-pane panel">
+        <div id="lobbySection">
+          <h2>Session</h2>
+          <p class="hint">Host clicks Host Game. Guest opens the host IP URL and clicks Join Game.</p>
+          <label for="nameInput">Your Name</label>
+          <input id="nameInput" maxlength="24" placeholder="Captain Name" value="" />
+
+          <div class="actions" style="margin-top:8px;">
+            <button id="hostBtn">Host Game</button>
+            <button id="joinBtn" class="secondary">Join Game</button>
+          </div>
+
+          <p class="hint" style="margin-top:8px;">Guest should open the host's URL, for example: <strong>http://192.168.1.20:8000</strong></p>
+        </div>
+
+        <div>
+          <h2>Placement</h2>
+          <p class="hint">Place ships on your left board. Click Rotate to switch orientation.</p>
+          <div class="actions" style="margin-top:8px;">
+            <button id="rotateBtn" class="secondary">Rotate: Horizontal</button>
+            <button id="randomBtn" class="secondary">Randomize</button>
+          </div>
+          <div class="actions" style="margin-top:8px;">
+            <button id="resetBtn" class="danger">Reset</button>
+            <button id="lockBtn">Lock Ships</button>
+          </div>
+
+          <div class="ship-list" id="shipList" style="margin-top:10px;"></div>
+        </div>
+
+        <div>
+          <h2>Audio</h2>
+          <div class="actions" style="margin-top:8px;">
+            <button id="audioBtn" class="secondary">Enable Audio</button>
+            <button id="testBtn" class="secondary">Test Sounds</button>
+          </div>
+        </div>
+
+        <div class="status" id="statusBox">Create or join a room to begin.</div>
+
+      </aside>
+
+      <main class="game-pane panel">
+        <div class="hud">
+          <div class="hud-box" id="sessionLabel">Session: -</div>
+          <div class="hud-box" id="playerLabel">You: -</div>
+          <div class="hud-box" id="opponentLabel">Opponent: waiting</div>
+          <div class="hud-box" id="turnLabel">Turn: -</div>
+        </div>
+
+        <div class="boards">
+          <section class="board-card">
+            <h3 class="board-title">Left Board: Fleet Position</h3>
+            <div class="board-wrap"><div class="board" id="ownBoard"></div></div>
+          </section>
+
+          <section class="board-card">
+            <h3 class="board-title">Right Board: Target Tracking</h3>
+            <div class="board-wrap"><div class="board" id="trackingBoard"></div></div>
+          </section>
+        </div>
+
+        <div class="legend">
+          <span><i class="sw" style="background:#81929f"></i>Ship</span>
+          <span><i class="sw" style="background:#d95f35"></i>Hit</span>
+          <span><i class="sw" style="background:#5e8ea6"></i>Miss</span>
+          <span><i class="sw" style="background:#255066"></i>Water</span>
+        </div>
+
+        <div class="log" id="eventLog"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const BOARD_SIZE = 10;
+    const FLEET = [
+      { name: "Aircraft Carrier", length: 5, type: "carrier" },
+      { name: "Battleship", length: 4, type: "battleship" },
+      { name: "Cruiser", length: 3, type: "cruiser" },
+      { name: "Submarine", length: 3, type: "submarine" },
+      { name: "Destroyer", length: 2, type: "destroyer" },
+    ];
+    const SHIPS = FLEET.map((s) => s.length);
+    const SUNK_LINES = [
+      "That ship is now an artificial reef.",
+      "Their insurance premium just doubled.",
+      "Splash one hull, hold the survivors.",
+      "That captain is updating their resume.",
+      "Straight to Davy Jones' voicemail.",
+      "Enemy ship status: deeply submerged.",
+      "They brought a ship to a fireworks show.",
+      "That hull folded like a lawn chair.",
+      "Another one joins the ocean floor fan club.",
+      "Their floating days are officially over.",
+      "Congratulations, you invented a new reef.",
+      "That ship just rage-quit the surface.",
+      "The fish are filing a noise complaint.",
+      "Enemy crew requested immediate swimming lessons.",
+      "That's one less parking spot at sea.",
+      "Hull integrity has left the chat.",
+      "That vessel is now a historic site.",
+      "They've been promoted to submarine unexpectedly.",
+      "That ship sank faster than my weekend plans.",
+      "Direct to seabed delivery confirmed.",
+    ];
+
+    const state = {
+      roomCode: "",
+      token: "",
+      displayName: "",
+      phase: "idle",
+      turnToken: "",
+      winnerToken: "",
+      orientation: "H",
+      placement: [],
+      selectedShip: 0,
+      pollHandle: null,
+      latestServerState: null,
+      previousOwnBoard: null,
+      previousTrackingBoard: null,
+      audioEnabled: false,
+      audioCtx: null,
+      noiseBuffer: null,
+      lastTurnToken: "",
+    };
+
+    const ui = {
+      connectionBadge: document.getElementById("connectionBadge"),
+      nameInput: document.getElementById("nameInput"),
+      hostBtn: document.getElementById("hostBtn"),
+      joinBtn: document.getElementById("joinBtn"),
+      rotateBtn: document.getElementById("rotateBtn"),
+      randomBtn: document.getElementById("randomBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      lockBtn: document.getElementById("lockBtn"),
+      audioBtn: document.getElementById("audioBtn"),
+      testBtn: document.getElementById("testBtn"),
+      statusBox: document.getElementById("statusBox"),
+      shipList: document.getElementById("shipList"),
+      ownBoard: document.getElementById("ownBoard"),
+      trackingBoard: document.getElementById("trackingBoard"),
+      sessionLabel: document.getElementById("sessionLabel"),
+      playerLabel: document.getElementById("playerLabel"),
+      opponentLabel: document.getElementById("opponentLabel"),
+      turnLabel: document.getElementById("turnLabel"),
+      eventLog: document.getElementById("eventLog"),
+    };
+
+    function addLog(message) {
+      const p = document.createElement("p");
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      ui.eventLog.prepend(p);
+      while (ui.eventLog.children.length > 70) {
+        ui.eventLog.removeChild(ui.eventLog.lastChild);
+      }
+    }
+
+    function setStatus(msg) {
+      ui.statusBox.textContent = msg;
+    }
+
+    function debugLog() {}
+
+    function showClickFeedback(event) {
+      const dot = document.createElement("div");
+      dot.className = "click-feedback";
+      dot.style.left = `${event.clientX}px`;
+      dot.style.top = `${event.clientY}px`;
+      document.body.appendChild(dot);
+      setTimeout(() => {
+        dot.remove();
+      }, 1150);
+    }
+
+    function flashTile(tile) {
+      if (!tile) return;
+      tile.classList.add("flash");
+      setTimeout(() => {
+        tile.classList.remove("flash");
+      }, 1100);
+    }
+
+    function speakSunkMessage(shipClass) {
+      const funny = SUNK_LINES[Math.floor(Math.random() * SUNK_LINES.length)];
+      speakLine(funny, { rate: 0.95, pitch: 0.95, delayMs: 40 });
+    }
+
+    function speakLine(text, options = {}) {
+      if (!("speechSynthesis" in window)) return;
+      try {
+        const delayMs = Number(options.delayMs || 0);
+        const interrupt = !!options.interrupt;
+        if (interrupt) window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = Number(options.rate || 1.0);
+        utter.pitch = Number(options.pitch || 1.0);
+        utter.volume = 1.0;
+        setTimeout(() => {
+          window.speechSynthesis.speak(utter);
+        }, delayMs);
+      } catch {
+        // Ignore speech engine errors.
+      }
+    }
+
+    function congratulateWinner(name) {
+      const captain = (name || "Captain").trim();
+      const msg = `Congratulations, ${captain}! You won the battle.`;
+      setStatus(msg);
+      addLog(msg);
+      speakLine(msg, { rate: 0.95, pitch: 1.0, delayMs: 250 });
+    }
+
+    function playSelectTick() {
+      if (!state.audioEnabled) return;
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = gainNode(ctx, 0.001);
+      osc.type = "square";
+      osc.frequency.setValueAtTime(950, t);
+      osc.frequency.exponentialRampToValueAtTime(680, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.09, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+      osc.connect(g);
+      osc.start(t);
+      osc.stop(t + 0.09);
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function animateAutoMarkedCells(cells) {
+      if (!Array.isArray(cells) || cells.length === 0) return;
+      for (const cell of cells) {
+        const x = Number(cell.x);
+        const y = Number(cell.y);
+        const tile = ui.trackingBoard.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
+        if (tile) {
+          tile.classList.add("auto-scan");
+          playSelectTick();
+          setTimeout(() => tile.classList.remove("auto-scan"), 460);
+        }
+        await sleep(100);
+      }
+    }
+
+    async function postJson(path, payload) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 7000);
+      let res;
+      try {
+        res = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+      const data = await res.json();
+      if (!data.ok) {
+        throw new Error(data.error || "Request failed");
+      }
+      return data;
+    }
+
+    async function getState() {
+      const params = new URLSearchParams({ code: state.roomCode, token: state.token });
+      const res = await fetch(`/api/state?${params.toString()}`);
+      const data = await res.json();
+      if (!data.ok) {
+        throw new Error(data.error || "Failed to fetch state");
+      }
+      return data.state;
+    }
+
+    function buildShipList() {
+      ui.shipList.innerHTML = "";
+      for (let i = 0; i < SHIPS.length; i++) {
+        const row = document.createElement("div");
+        const item = state.placement[i];
+        row.className = "ship-item";
+        if (i === state.selectedShip && !item) row.classList.add("active");
+        if (item) row.classList.add("done");
+
+        const left = document.createElement("span");
+        left.textContent = `${FLEET[i].name} (length ${SHIPS[i]})`;
+
+        const right = document.createElement("span");
+        right.className = "dot" + (item ? " done" : "");
+
+        row.appendChild(left);
+        row.appendChild(right);
+        row.addEventListener("click", () => {
+          if (state.phase === "placement") {
+            state.selectedShip = i;
+            buildShipList();
+          }
+        });
+        ui.shipList.appendChild(row);
+      }
+    }
+
+    function isMyTurn() {
+      return state.latestServerState && state.latestServerState.turnToken === state.token;
+    }
+
+    function createBoardFromPlacement() {
+      const board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill("~"));
+      for (const ship of state.placement) {
+        if (!ship) continue;
+        for (let i = 0; i < ship.length; i++) {
+          const x = ship.direction === "H" ? ship.x + i : ship.x;
+          const y = ship.direction === "H" ? ship.y : ship.y + i;
+          board[y][x] = "S";
+        }
+      }
+      return board;
+    }
+
+    function isShipHullCell(board, x, y) {
+      if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE) return false;
+      const cell = board[y][x];
+      return cell === "S" || cell === "X";
+    }
+
+    function extractShipsFromBoard(board) {
+      const visited = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(false));
+      const ships = [];
+      for (let y = 0; y < BOARD_SIZE; y++) {
+        for (let x = 0; x < BOARD_SIZE; x++) {
+          if (!isShipHullCell(board, x, y) || visited[y][x]) continue;
+          let direction = "H";
+          if (isShipHullCell(board, x + 1, y)) direction = "H";
+          else if (isShipHullCell(board, x, y + 1)) direction = "V";
+
+          const cells = [];
+          let cx = x;
+          let cy = y;
+          while (isShipHullCell(board, cx, cy)) {
+            cells.push({ x: cx, y: cy });
+            visited[cy][cx] = true;
+            if (direction === "H") cx += 1;
+            else cy += 1;
+          }
+          ships.push({ x, y, direction, length: cells.length, cells });
+        }
+      }
+      return ships;
+    }
+
+    function getShipSegmentClasses(board, x, y, shipId = null) {
+      const left = isShipHullCell(board, x - 1, y);
+      const right = isShipHullCell(board, x + 1, y);
+      const up = isShipHullCell(board, x, y - 1);
+      const down = isShipHullCell(board, x, y + 1);
+      const shipType = getShipTypeById(shipId);
+
+      if (left || right) {
+        let before = 0;
+        while (isShipHullCell(board, x - before - 1, y)) before++;
+        let after = 0;
+        while (isShipHullCell(board, x + after + 1, y)) after++;
+        const length = before + 1 + after;
+        const index = before;
+        const classes = ["ship-h", `ship-len-${length}`];
+        if (index === 0) classes.push("ship-bow");
+        else if (index === length - 1) classes.push("ship-stern");
+        else classes.push("ship-mid");
+        if (shipType === "cruiser" && length === 3 && index === 1) {
+          classes.push("ship-cannon");
+        } else if (length >= 4 && index === length - 2) {
+          classes.push("ship-bridge");
+        } else if (length >= 4 && index > 0 && index < length - 1 && index % 2 === 1 && length !== 5) {
+          classes.push("ship-turret");
+        }
+        return classes;
+      }
+
+      if (up || down) {
+        let before = 0;
+        while (isShipHullCell(board, x, y - before - 1)) before++;
+        let after = 0;
+        while (isShipHullCell(board, x, y + after + 1)) after++;
+        const length = before + 1 + after;
+        const index = before;
+        const classes = ["ship-v", `ship-len-${length}`];
+        if (index === 0) classes.push("ship-bow");
+        else if (index === length - 1) classes.push("ship-stern");
+        else classes.push("ship-mid");
+        if (shipType === "cruiser" && length === 3 && index === 1) {
+          classes.push("ship-cannon");
+        } else if (length >= 4 && index === length - 2) {
+          classes.push("ship-bridge");
+        } else if (length >= 4 && index > 0 && index < length - 1 && index % 2 === 1 && length !== 5) {
+          classes.push("ship-turret");
+        }
+        return classes;
+      }
+
+      return ["ship-solo", "ship-mid", "ship-len-1"];
+    }
+
+    function renderOwnShipImageOverlay(ships) {
+      const overlay = document.createElement("div");
+      overlay.className = "ship-overlay";
+      const imageShips = ships.filter((ship) => isImageShipType(getShipTypeById(ship.id)));
+
+      for (const ship of imageShips) {
+        const start = ui.ownBoard.querySelector(`.tile[data-x="${ship.x}"][data-y="${ship.y}"]`);
+        const endX = ship.direction === "H" ? ship.x + ship.length - 1 : ship.x;
+        const endY = ship.direction === "V" ? ship.y + ship.length - 1 : ship.y;
+        const end = ui.ownBoard.querySelector(`.tile[data-x="${endX}"][data-y="${endY}"]`);
+        if (!start || !end) continue;
+
+        const left = start.offsetLeft;
+        const top = start.offsetTop;
+        const width = ship.direction === "H" ? end.offsetLeft + end.offsetWidth - left : start.offsetWidth;
+        const height = ship.direction === "V" ? end.offsetTop + end.offsetHeight - top : start.offsetHeight;
+
+        const sprite = document.createElement("div");
+        sprite.className = "ship-sprite";
+        let spriteLeft = left;
+        let spriteTop = top;
+        let spriteWidth = width;
+        let spriteHeight = height;
+        let spriteTransform = "";
+
+        const shipType = getShipTypeById(ship.id);
+        if (shipType === "carrier") {
+          sprite.style.backgroundImage = 'url("Carrier.png")';
+          sprite.style.backgroundSize = "contain";
+          if (ship.direction === "V") {
+            const delta = (height - width) / 2;
+            spriteLeft = left - delta;
+            spriteTop = top + delta;
+            spriteWidth = height;
+            spriteHeight = width;
+            spriteTransform = "rotate(90deg)";
+          }
+        } else if (shipType === "submarine") {
+          sprite.style.backgroundImage = 'url("Submarine_gemini.png")';
+          sprite.style.backgroundSize = "contain";
+          if (ship.direction === "V") {
+            const delta = (height - width) / 2;
+            spriteLeft = left - delta;
+            spriteTop = top + delta;
+            spriteWidth = height;
+            spriteHeight = width;
+            spriteTransform = "rotate(90deg)";
+          }
+        } else if (shipType === "battleship") {
+          sprite.style.backgroundImage = 'url("Battleship.png")';
+          sprite.style.backgroundSize = "contain";
+          if (ship.direction === "V") {
+            const delta = (height - width) / 2;
+            spriteLeft = left - delta;
+            spriteTop = top + delta;
+            spriteWidth = height;
+            spriteHeight = width;
+            spriteTransform = "rotate(90deg)";
+          }
+        } else if (shipType === "cruiser") {
+          sprite.style.backgroundImage = 'url("Cruiser.png")';
+          sprite.style.backgroundSize = "contain";
+          if (ship.direction === "V") {
+            const delta = (height - width) / 2;
+            spriteLeft = left - delta;
+            spriteTop = top + delta;
+            spriteWidth = height;
+            spriteHeight = width;
+            spriteTransform = "rotate(90deg)";
+          }
+        } else if (shipType === "destroyer") {
+          sprite.style.backgroundImage = 'url("Destroyer.png")';
+          sprite.style.backgroundSize = "contain";
+          if (ship.direction === "V") {
+            const delta = (height - width) / 2;
+            spriteLeft = left - delta;
+            spriteTop = top + delta;
+            spriteWidth = height;
+            spriteHeight = width;
+            spriteTransform = "rotate(90deg)";
+          }
+        }
+
+        sprite.style.left = `${spriteLeft}px`;
+        sprite.style.top = `${spriteTop}px`;
+        sprite.style.width = `${spriteWidth}px`;
+        sprite.style.height = `${spriteHeight}px`;
+        if (spriteTransform) sprite.style.transform = spriteTransform;
+
+        overlay.appendChild(sprite);
+      }
+
+      ui.ownBoard.appendChild(overlay);
+    }
+
+    function canPlaceShip(x, y, length, direction) {
+      const tempBoard = createBoardFromPlacement();
+      for (let i = 0; i < length; i++) {
+        const cx = direction === "H" ? x + i : x;
+        const cy = direction === "H" ? y : y + i;
+        if (cx < 0 || cy < 0 || cx >= BOARD_SIZE || cy >= BOARD_SIZE) return false;
+        if (tempBoard[cy][cx] === "S") return false;
+        for (let ny = cy - 1; ny <= cy + 1; ny++) {
+          for (let nx = cx - 1; nx <= cx + 1; nx++) {
+            if (nx < 0 || ny < 0 || nx >= BOARD_SIZE || ny >= BOARD_SIZE) continue;
+            if (tempBoard[ny][nx] === "S") return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function placeSelectedShip(x, y) {
+      if (state.latestServerState?.me?.placed) return;
+      const idx = state.selectedShip;
+      const len = SHIPS[idx];
+      let px = x;
+      let py = y;
+      if (state.orientation === "H" && px + len > BOARD_SIZE) px = BOARD_SIZE - len;
+      if (state.orientation === "V" && py + len > BOARD_SIZE) py = BOARD_SIZE - len;
+      const previous = state.placement[idx] || null;
+      state.placement[idx] = null;
+      if (!canPlaceShip(px, py, len, state.orientation)) {
+        state.placement[idx] = previous;
+        setStatus("Invalid placement. Ships must stay in bounds and cannot touch each other.");
+        debugLog(`Placement rejected ship=${idx + 1} len=${len} at ${px},${py} dir=${state.orientation}.`, true);
+        return false;
+      }
+      state.placement[idx] = { x: px, y: py, length: len, direction: state.orientation };
+      const next = state.placement.findIndex((s) => !s);
+      state.selectedShip = next === -1 ? idx : next;
+      setStatus(`Ship positioned at ${String.fromCharCode(65 + px)}${py + 1}.`);
+      debugLog(`Placement accepted ship=${idx + 1} len=${len} at ${px},${py} dir=${state.orientation}.`, true);
+      buildShipList();
+      renderOwnBoard();
+      return true;
+    }
+
+    function renderOwnBoard() {
+      ui.ownBoard.innerHTML = "";
+      let board;
+      const placed = state.latestServerState?.me?.placed;
+      const ownShips = getOwnShipLayout();
+      const shipCellMap = buildShipCellMap(ownShips);
+
+      if (state.latestServerState?.me?.shipsBoard && placed) {
+        board = state.latestServerState.me.shipsBoard;
+      } else {
+        board = createBoardFromPlacement();
+      }
+
+      for (let y = 0; y < BOARD_SIZE; y++) {
+        for (let x = 0; x < BOARD_SIZE; x++) {
+          const cell = board[y][x];
+          const div = document.createElement("div");
+          div.className = "tile";
+          div.dataset.x = String(x);
+          div.dataset.y = String(y);
+
+          if (cell === "S") {
+            div.classList.add("ship");
+            const shipMeta = shipCellMap.get(`${x},${y}`) || null;
+            const shipClasses = getShipSegmentClasses(board, x, y, shipMeta?.id ?? null);
+            div.classList.add(...shipClasses);
+            if (shipMeta && isImageShipType(getShipTypeById(shipMeta.id))) {
+              div.classList.add("ship-image-cell");
+            }
+          }
+          if (cell === "X") div.classList.add("hit");
+          if (cell === "O") div.classList.add("miss");
+
+          if (state.phase === "placement" && !placed) {
+            div.classList.add("clickable");
+            div.addEventListener("click", (event) => {
+              event.stopPropagation();
+              placeSelectedShip(x, y);
+            });
+          }
+          div.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            showClickFeedback(event);
+            flashTile(div);
+            debugLog(`tile pointerdown own x=${x}, y=${y}`, true);
+            handleOwnBoardCell(x, y);
+          });
+
+          ui.ownBoard.appendChild(div);
+        }
+      }
+      renderOwnShipImageOverlay(ownShips);
+    }
+
+    function renderTrackingBoard() {
+      ui.trackingBoard.innerHTML = "";
+      const board = state.latestServerState?.me?.trackingBoard || Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill("~"));
+
+      for (let y = 0; y < BOARD_SIZE; y++) {
+        for (let x = 0; x < BOARD_SIZE; x++) {
+          const cell = board[y][x];
+          const div = document.createElement("div");
+          div.className = "tile";
+          div.dataset.x = String(x);
+          div.dataset.y = String(y);
+          if (cell === "H") div.classList.add("enemy-hit");
+          if (cell === "M") div.classList.add("miss");
+
+          if (cell === "~") {
+            div.classList.add("clickable");
+          }
+          div.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            showClickFeedback(event);
+            flashTile(div);
+            debugLog(`tile pointerdown tracking x=${x}, y=${y}`, true);
+            handleTrackingBoardCell(x, y);
+          });
+
+          ui.trackingBoard.appendChild(div);
+        }
+      }
+    }
+
+    function getShipTypeById(shipId) {
+      return FLEET[shipId]?.type || null;
+    }
+
+    function isImageShipType(shipType) {
+      return shipType === "carrier" || shipType === "battleship" || shipType === "cruiser" || shipType === "submarine" || shipType === "destroyer";
+    }
+
+    function getOwnShipLayout() {
+      const serverShips = state.latestServerState?.me?.ships;
+      if (Array.isArray(serverShips) && serverShips.length > 0) {
+        return serverShips
+          .map((ship) => ({
+            id: Number(ship.id),
+            x: Number(ship.x),
+            y: Number(ship.y),
+            length: Number(ship.length),
+            direction: String(ship.direction || "H").toUpperCase(),
+          }))
+          .filter((ship) =>
+            Number.isInteger(ship.id) && Number.isInteger(ship.x) && Number.isInteger(ship.y) &&
+            Number.isInteger(ship.length) && (ship.direction === "H" || ship.direction === "V")
+          );
+      }
+
+      const localShips = [];
+      for (let i = 0; i < state.placement.length; i++) {
+        const ship = state.placement[i];
+        if (!ship) continue;
+        localShips.push({
+          id: i,
+          x: ship.x,
+          y: ship.y,
+          length: ship.length,
+          direction: ship.direction,
+        });
+      }
+      return localShips;
+    }
+
+    function buildShipCellMap(ships) {
+      const map = new Map();
+      for (const ship of ships) {
+        for (let i = 0; i < ship.length; i++) {
+          const x = ship.direction === "H" ? ship.x + i : ship.x;
+          const y = ship.direction === "V" ? ship.y + i : ship.y;
+          map.set(`${x},${y}`, ship);
+        }
+      }
+      return map;
+    }
+
+    async function createRoom() {
+      const displayName = (ui.nameInput.value || "Player 1").trim();
+      const data = await postJson("/api/create_room", { displayName });
+      state.roomCode = data.roomCode;
+      state.token = data.token;
+      state.displayName = data.displayName;
+      state.phase = "placement";
+      addLog("Host session created. Waiting for second player.");
+      setStatus("Host ready. Guest should open your IP URL and click Join Game.");
+      debugLog(`Host session created as ${state.displayName}.`, true);
+      renderOwnBoard();
+      startPolling();
+    }
+
+    async function joinRoom() {
+      const displayName = (ui.nameInput.value || "Player 2").trim();
+      const data = await postJson("/api/join_room", { displayName });
+      state.roomCode = data.roomCode;
+      state.token = data.token;
+      state.displayName = data.displayName;
+      state.phase = "placement";
+      addLog("Joined host session. Place your fleet.");
+      setStatus("Room joined. Place ships on your left board.");
+      debugLog(`Joined host session as ${state.displayName}.`, true);
+      renderOwnBoard();
+      startPolling();
+    }
+
+    async function lockShips() {
+      if (state.placement.some((s) => !s) && !state.latestServerState?.me?.placed) {
+        setStatus("All 5 ships must be placed before lock-in.");
+        return;
+      }
+
+      const ships = state.latestServerState?.me?.placed ? [] : state.placement;
+      if (ships.length === 0 && state.latestServerState?.me?.placed) {
+        setStatus("Ships already locked.");
+        return;
+      }
+
+      await postJson("/api/place_ships", {
+        roomCode: state.roomCode,
+        token: state.token,
+        ships,
+      });
+      setStatus("Ships locked. Waiting for opponent.");
+      addLog("Fleet locked in.");
+      await refreshState();
+    }
+
+    async function fireAt(x, y) {
+      if (!isMyTurn()) {
+        setStatus("Not your turn yet. Wait for enemy fire.");
+        debugLog(`Fire blocked at ${x},${y}: not your turn.`, true);
+        return;
+      }
+      setStatus(`Firing at ${String.fromCharCode(65 + x)}${y + 1}...`);
+      debugLog(`Fire attempt at ${x},${y}.`, true);
+      playWhistle();
+      try {
+        const res = await postJson("/api/fire", { roomCode: state.roomCode, token: state.token, x, y });
+        const shot = res.shot;
+        debugLog(`Fire response at ${x},${y}: ${shot.result}, sunk=${shot.sunk}.`, true);
+        if (shot.result === "hit") {
+          await playHit();
+          if (shot.announceHitVoice) {
+            const cls = (shot.hitShipClass || "ship").trim();
+            setStatus(`You hit a ${cls}!`);
+            addLog(`You hit a ${cls}!`);
+            speakLine(`You hit a ${cls}!`, { rate: 0.98, pitch: 0.98, interrupt: true, delayMs: 20 });
+          }
+          if (shot.sunk && !shot.gameFinished) {
+            await playBubbles();
+            speakSunkMessage(shot.sunkShipClass || shot.hitShipClass || "ship");
+            addLog(`Enemy ${shot.sunkShipClass || "ship"} sunk.`);
+          }
+        } else {
+          playSplash();
+          addLog(`Missed at ${String.fromCharCode(65 + x)}${y + 1}.`);
+        }
+        await refreshState();
+        if (shot.sunk && Array.isArray(shot.autoMarkedCells) && shot.autoMarkedCells.length > 0) {
+          setStatus(`Ship sunk. Auto-selecting perimeter cells (${shot.autoMarkedCells.length}).`);
+          debugLog(`Animating auto-mark for ${shot.autoMarkedCells.length} cells.`, true);
+          await animateAutoMarkedCells(shot.autoMarkedCells);
+        }
+      } catch (err) {
+        setStatus(err.message);
+        debugLog(`Fire error at ${x},${y}: ${err.message}`, true);
+      }
+    }
+
+    function checkIncomingShotEffects(newState) {
+      if (!state.previousOwnBoard || !newState.me?.shipsBoard) return;
+      if (newState.phase !== "battle") return;
+
+      let change = null;
+      for (let y = 0; y < BOARD_SIZE; y++) {
+        for (let x = 0; x < BOARD_SIZE; x++) {
+          const prev = state.previousOwnBoard[y][x];
+          const next = newState.me.shipsBoard[y][x];
+          if (prev !== next && (next === "X" || next === "O")) {
+            change = { x, y, value: next };
+          }
+        }
+      }
+
+      if (!change) return;
+      if (newState.turnToken !== state.token) return;
+
+      playWhistle();
+      if (change.value === "X") {
+        playHit();
+        addLog(`Incoming strike hit your fleet at ${String.fromCharCode(65 + change.x)}${change.y + 1}.`);
+      } else {
+        playSplash();
+        addLog(`Enemy fire splashed at ${String.fromCharCode(65 + change.x)}${change.y + 1}.`);
+      }
+    }
+
+    function refreshHud(s) {
+      ui.connectionBadge.textContent = "Connected";
+      ui.sessionLabel.textContent = "Session: Connected";
+      ui.playerLabel.textContent = `You: ${s.me.displayName}`;
+      ui.opponentLabel.textContent = `Opponent: ${s.enemy.present ? s.enemy.displayName : "Waiting..."}`;
+
+      if (s.phase === "placement") {
+        if (s.me.placed) {
+          ui.turnLabel.textContent = "Turn: Waiting for both fleets";
+          setStatus("Ships locked. Waiting for opponent to finish placement.");
+        } else {
+          ui.turnLabel.textContent = "Turn: Place Ships";
+          setStatus("Place your ships and click Lock Ships.");
+        }
+      } else if (s.phase === "battle") {
+        if (isMyTurn()) {
+          ui.turnLabel.textContent = "Turn: Your move";
+          setStatus("Select a target on the right board.");
+        } else {
+          ui.turnLabel.textContent = "Turn: Opponent move";
+          setStatus("Stand by for incoming fire.");
+        }
+      } else if (s.phase === "finished") {
+        if (s.winnerToken === state.token) {
+          ui.turnLabel.textContent = "Turn: Victory";
+          setStatus("You won. Enemy fleet destroyed.");
+        } else {
+          ui.turnLabel.textContent = "Turn: Defeat";
+          setStatus("You lost. Your fleet has been sunk.");
+        }
+      }
+
+      ui.lockBtn.disabled = !!s.me.placed || s.phase !== "placement";
+      ui.rotateBtn.disabled = !!s.me.placed || s.phase !== "placement";
+      ui.randomBtn.disabled = !!s.me.placed || s.phase !== "placement";
+      ui.resetBtn.disabled = !!s.me.placed || s.phase !== "placement";
+    }
+
+    async function refreshState() {
+      if (!state.roomCode || !state.token) return;
+      try {
+        const s = await getState();
+        checkIncomingShotEffects(s);
+
+        const prevPhase = state.phase;
+        const prevWinner = state.winnerToken;
+
+        state.latestServerState = s;
+        state.phase = s.phase;
+        state.turnToken = s.turnToken;
+        state.winnerToken = s.winnerToken;
+        state.previousOwnBoard = s.me.shipsBoard.map((row) => row.slice());
+        state.previousTrackingBoard = s.me.trackingBoard.map((row) => row.slice());
+
+        refreshHud(s);
+        buildShipList();
+        renderOwnBoard();
+        renderTrackingBoard();
+
+        if (prevPhase !== s.phase || state.lastTurnToken !== s.turnToken) {
+          debugLog(`State phase=${s.phase}, turn=${s.turnToken === state.token ? "me" : "enemy"}.`, true);
+          state.lastTurnToken = s.turnToken || "";
+        }
+
+        if (prevPhase !== "battle" && s.phase === "battle") {
+          addLog("Battle started. Fire one shot per turn.");
+        }
+
+        if (prevPhase !== "finished" && s.phase === "finished" && s.winnerToken !== prevWinner) {
+          if (s.winnerToken === state.token) {
+            await playVictory();
+            addLog("Mission complete. Enemy fleet eliminated.");
+            congratulateWinner(s.me.displayName);
+          } else {
+            await playBubbles();
+            addLog("Fleet loss confirmed.");
+          }
+        }
+      } catch (err) {
+        ui.connectionBadge.textContent = "Disconnected";
+        setStatus(`Connection problem: ${err.message}`);
+        debugLog(`refreshState error: ${err.message}`, true);
+      }
+    }
+
+    function startPolling() {
+      clearInterval(state.pollHandle);
+      refreshState();
+      state.pollHandle = setInterval(refreshState, 900);
+    }
+
+    function randomizePlacement() {
+      const placed = [];
+      const board = Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill("~"));
+
+      for (let i = 0; i < SHIPS.length; i++) {
+        const length = SHIPS[i];
+        let success = false;
+        for (let attempts = 0; attempts < 500 && !success; attempts++) {
+          const direction = Math.random() < 0.5 ? "H" : "V";
+          const x = Math.floor(Math.random() * BOARD_SIZE);
+          const y = Math.floor(Math.random() * BOARD_SIZE);
+
+          let ok = true;
+          for (let j = 0; j < length; j++) {
+            const cx = direction === "H" ? x + j : x;
+            const cy = direction === "H" ? y : y + j;
+            if (cx < 0 || cy < 0 || cx >= BOARD_SIZE || cy >= BOARD_SIZE || board[cy][cx] === "S") {
+              ok = false;
+              break;
+            }
+            for (let ny = cy - 1; ny <= cy + 1; ny++) {
+              for (let nx = cx - 1; nx <= cx + 1; nx++) {
+                if (nx < 0 || ny < 0 || nx >= BOARD_SIZE || ny >= BOARD_SIZE) continue;
+                if (board[ny][nx] === "S") {
+                  ok = false;
+                  break;
+                }
+              }
+              if (!ok) break;
+            }
+            if (!ok) break;
+          }
+          if (!ok) continue;
+
+          for (let j = 0; j < length; j++) {
+            const cx = direction === "H" ? x + j : x;
+            const cy = direction === "H" ? y : y + j;
+            board[cy][cx] = "S";
+          }
+          placed[i] = { x, y, length, direction };
+          success = true;
+        }
+      }
+
+      state.placement = placed;
+      state.selectedShip = state.placement.findIndex((s) => !s);
+      if (state.selectedShip === -1) state.selectedShip = SHIPS.length - 1;
+      buildShipList();
+      renderOwnBoard();
+      setStatus("Random fleet generated.");
+    }
+
+    function resetPlacement() {
+      state.placement = Array(SHIPS.length).fill(null);
+      state.selectedShip = 0;
+      buildShipList();
+      renderOwnBoard();
+      setStatus("Placement reset.");
+    }
+
+    function onOwnBoardClick(event) {
+      const tile = event.target.closest(".tile");
+      if (!tile || !ui.ownBoard.contains(tile)) return;
+      showClickFeedback(event);
+      flashTile(tile);
+      debugLog(`Own board click raw target x=${tile.dataset.x}, y=${tile.dataset.y}`, true);
+      if (state.phase !== "placement") {
+        setStatus("Ship placement is closed.");
+        debugLog(`Own board click blocked: phase=${state.phase}`, true);
+        return;
+      }
+      if (state.latestServerState?.me?.placed) {
+        setStatus("Ships already locked.");
+        debugLog("Own board click blocked: ships already locked.", true);
+        return;
+      }
+      const x = Number(tile.dataset.x);
+      const y = Number(tile.dataset.y);
+      if (Number.isNaN(x) || Number.isNaN(y)) return;
+      const ok = placeSelectedShip(x, y);
+      debugLog(`Own board click resolved x=${x}, y=${y}, ok=${!!ok}`, true);
+    }
+
+    function handleOwnBoardCell(x, y) {
+      if (state.phase !== "placement") {
+        setStatus("Ship placement is closed.");
+        debugLog(`Own board blocked: phase=${state.phase}`, true);
+        return;
+      }
+      if (state.latestServerState?.me?.placed) {
+        setStatus("Ships already locked.");
+        debugLog("Own board blocked: ships already locked.", true);
+        return;
+      }
+      const ok = placeSelectedShip(x, y);
+      debugLog(`Own board pointer resolved x=${x}, y=${y}, ok=${!!ok}`, true);
+    }
+
+    function onTrackingBoardClick(event) {
+      const tile = event.target.closest(".tile");
+      if (!tile || !ui.trackingBoard.contains(tile)) return;
+      showClickFeedback(event);
+      flashTile(tile);
+      const x = Number(tile.dataset.x);
+      const y = Number(tile.dataset.y);
+      if (Number.isNaN(x) || Number.isNaN(y)) return;
+
+      const board = state.latestServerState?.me?.trackingBoard;
+      const cell = board ? board[y][x] : "~";
+      debugLog(`Tracking click x=${x}, y=${y}, cell=${cell}, phase=${state.phase}`, true);
+      if (cell !== "~") {
+        setStatus("Already fired there. Choose a different square.");
+        return;
+      }
+      if (state.phase !== "battle") {
+        setStatus("Battle has not started. Both players must lock ships first.");
+        return;
+      }
+      if (!isMyTurn()) {
+        setStatus("Not your turn yet. Wait for enemy fire.");
+        return;
+      }
+      fireAt(x, y);
+    }
+
+    function handleTrackingBoardCell(x, y) {
+      const board = state.latestServerState?.me?.trackingBoard;
+      const cell = board ? board[y][x] : "~";
+      debugLog(`Tracking pointer x=${x}, y=${y}, cell=${cell}, phase=${state.phase}`, true);
+      if (cell !== "~") {
+        setStatus("Already fired there. Choose a different square.");
+        return;
+      }
+      if (state.phase !== "battle") {
+        setStatus("Battle has not started. Both players must lock ships first.");
+        return;
+      }
+      if (!isMyTurn()) {
+        setStatus("Not your turn yet. Wait for enemy fire.");
+        return;
+      }
+      fireAt(x, y);
+    }
+
+    function ensureAudioContext() {
+      if (state.audioCtx) return state.audioCtx;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) {
+        setStatus("Web Audio not supported in this browser.");
+        return null;
+      }
+      state.audioCtx = new Ctx();
+      const frameCount = state.audioCtx.sampleRate;
+      const buffer = state.audioCtx.createBuffer(1, frameCount, state.audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < frameCount; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.35;
+      }
+      state.noiseBuffer = buffer;
+      return state.audioCtx;
+    }
+
+    async function enableAudio() {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      if (ctx.state === "suspended") await ctx.resume();
+      state.audioEnabled = true;
+      ui.audioBtn.textContent = "Audio Enabled";
+      addLog("Audio system armed.");
+    }
+
+    function gainNode(ctx, val) {
+      const g = ctx.createGain();
+      g.gain.value = val;
+      g.connect(ctx.destination);
+      return g;
+    }
+
+    function playWhistle() {
+      if (!state.audioEnabled) return;
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = gainNode(ctx, 0.001);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(1200, t);
+      osc.frequency.exponentialRampToValueAtTime(240, t + 0.8);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.86);
+      osc.connect(g);
+      osc.start(t);
+      osc.stop(t + 0.87);
+    }
+
+    function playSplash() {
+      if (!state.audioEnabled) return;
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const src = ctx.createBufferSource();
+      src.buffer = state.noiseBuffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(520, t);
+      filter.Q.value = 0.9;
+      const g = gainNode(ctx, 0.001);
+      g.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      src.connect(filter);
+      filter.connect(g);
+      src.start(t);
+      src.stop(t + 0.5);
+    }
+
+    function playHitSynth() {
+      if (!state.audioEnabled) return;
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+
+      const boom = ctx.createBufferSource();
+      boom.buffer = state.noiseBuffer;
+      const low = ctx.createBiquadFilter();
+      low.type = "lowpass";
+      low.frequency.value = 260;
+      const g1 = gainNode(ctx, 0.001);
+      g1.gain.exponentialRampToValueAtTime(0.45, t + 0.01);
+      g1.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      boom.connect(low);
+      low.connect(g1);
+      boom.start(t);
+      boom.stop(t + 0.45);
+
+      const thud = ctx.createOscillator();
+      const g2 = gainNode(ctx, 0.001);
+      thud.type = "triangle";
+      thud.frequency.setValueAtTime(110, t);
+      thud.frequency.exponentialRampToValueAtTime(45, t + 0.28);
+      g2.gain.exponentialRampToValueAtTime(0.2, t + 0.01);
+      g2.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      thud.connect(g2);
+      thud.start(t);
+      thud.stop(t + 0.31);
+    }
+
+    async function playHit() {
+      if (!state.audioEnabled) return;
+      const index = 1 + Math.floor(Math.random() * 7);
+      try {
+        const sfx = new Audio(`Explosion${index}.mp3`);
+        sfx.volume = 0.9;
+        await new Promise((resolve) => {
+          const done = () => resolve();
+          sfx.addEventListener("ended", done, { once: true });
+          sfx.addEventListener("error", done, { once: true });
+          const maybe = sfx.play();
+          if (maybe && typeof maybe.catch === "function") {
+            maybe.catch(() => {
+              playHitSynth();
+              setTimeout(resolve, 340);
+            });
+          } else {
+            setTimeout(resolve, 1200);
+          }
+        });
+      } catch {
+        playHitSynth();
+        await sleep(340);
+      }
+    }
+
+    async function playBubbles() {
+      if (!state.audioEnabled) return;
+      try {
+        const sfx = new Audio("Bubbles.mp3");
+        sfx.volume = 0.9;
+        await new Promise((resolve) => {
+          const done = () => resolve();
+          sfx.addEventListener("ended", done, { once: true });
+          sfx.addEventListener("error", done, { once: true });
+          const maybe = sfx.play();
+          if (maybe && typeof maybe.catch === "function") {
+            maybe.catch(() => resolve());
+          } else {
+            setTimeout(resolve, 1200);
+          }
+        });
+      } catch {
+        await sleep(900);
+      }
+    }
+
+    async function playVictory() {
+      if (!state.audioEnabled) return;
+      try {
+        const sfx = new Audio("Victory.mp3");
+        sfx.volume = 0.9;
+        await new Promise((resolve) => {
+          const done = () => resolve();
+          sfx.addEventListener("ended", done, { once: true });
+          sfx.addEventListener("error", done, { once: true });
+          const maybe = sfx.play();
+          if (maybe && typeof maybe.catch === "function") {
+            maybe.catch(() => resolve());
+          } else {
+            setTimeout(resolve, 1200);
+          }
+        });
+      } catch {
+        await sleep(900);
+      }
+    }
+
+    ui.hostBtn.addEventListener("click", async () => {
+      try {
+        await enableAudio();
+        await createRoom();
+      } catch (err) {
+        setStatus(err.message);
+      }
+    });
+
+    ui.joinBtn.addEventListener("click", async () => {
+      try {
+        await enableAudio();
+        await joinRoom();
+      } catch (err) {
+        setStatus(err.message);
+      }
+    });
+
+    ui.rotateBtn.addEventListener("click", () => {
+      state.orientation = state.orientation === "H" ? "V" : "H";
+      ui.rotateBtn.textContent = `Rotate: ${state.orientation === "H" ? "Horizontal" : "Vertical"}`;
+    });
+
+    ui.randomBtn.addEventListener("click", () => {
+      if (state.phase !== "placement" || state.latestServerState?.me?.placed) return;
+      randomizePlacement();
+    });
+
+    ui.resetBtn.addEventListener("click", () => {
+      if (state.phase !== "placement" || state.latestServerState?.me?.placed) return;
+      resetPlacement();
+    });
+
+    ui.lockBtn.addEventListener("click", async () => {
+      if (!state.roomCode || !state.token) {
+        setStatus("Create or join a room first.");
+        return;
+      }
+      try {
+        await lockShips();
+      } catch (err) {
+        setStatus(err.message);
+      }
+    });
+
+    ui.audioBtn.addEventListener("click", () => enableAudio());
+
+    ui.testBtn.addEventListener("click", async () => {
+      await enableAudio();
+      playWhistle();
+      await sleep(900);
+      playSplash();
+      await sleep(800);
+      await playHit();
+      await playBubbles();
+    });
+
+    function initialize() {
+      state.placement = Array(SHIPS.length).fill(null);
+      const captureFeedback = (event, boardEl) => {
+        const tile = event.target.closest(".tile");
+        if (!tile || !boardEl.contains(tile)) return;
+        showClickFeedback(event);
+        flashTile(tile);
+        debugLog(`pointerdown board=${boardEl.id} x=${tile.dataset.x} y=${tile.dataset.y}`, true);
+      };
+      ui.ownBoard.addEventListener("pointerdown", (event) => captureFeedback(event, ui.ownBoard), true);
+      ui.trackingBoard.addEventListener("pointerdown", (event) => captureFeedback(event, ui.trackingBoard), true);
+      ui.ownBoard.addEventListener("click", onOwnBoardClick);
+      ui.trackingBoard.addEventListener("click", onTrackingBoardClick);
+      buildShipList();
+      renderOwnBoard();
+      renderTrackingBoard();
+      addLog("System ready. Host clicks Host Game, guest clicks Join Game.");
+      debugLog("Client initialized.");
+    }
+
+    initialize();
+  </script>
+</body>
+</html>
