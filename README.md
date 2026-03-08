@@ -1,4 +1,6 @@
-﻿# Battleship: Iron Tides (LAN)
+![Battleship Screenshot](<Battleship Screenshot 2026-03-08.png>)
+
+# Battleship: Iron Tides (LAN)
 
 A 2-player Battleship game for Windows laptops on the same home network.
 
@@ -41,3 +43,6 @@ Sound mapping:
 - `server.py`: LAN HTTP game server (no external Python packages).
 - `game.html`: UI and game logic.
 - `start_server.bat`: easiest launch for Windows.
+
+
+
